@@ -36,6 +36,7 @@ new WorkloadConstruct(stack, "ConstructWorkload6", {
   cluster: {
     name: "ECS-Cluster6",
   },
+  exposeApi: true,
   rolloutStrategy: DeploymentControllerType.ECS,
 });
 

@@ -149,3 +149,7 @@ The WorkloadConstruct accepts the following configuration options:
 - **createDashboard**: Determines whether to create a CloudWatch dashboard for monitoring.
 
 Note: Some options are optional and have default values.
+
+# Output
+
+Link to deployed container on ECS(Fargate) via cdk can be found [here](http://myecs-const-8t19qd47yx59-1675241258.us-east-1.elb.amazonaws.com/)
