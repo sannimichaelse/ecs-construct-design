@@ -3,9 +3,11 @@
 Deploy an ECS workload on AWS. The construct provides flexibility in configuring various aspects of the workload, including the VPC, container, registry, Fargate service, logging, and more.
 
 # Usage
+
 To use the WorkloadConstruct, you can create an instance of it in your AWS CDK stack with different configurations. Here are three examples demonstrating different ways to call the WorkloadConstruct:
 
 ### Example 1
+
 ```
 import { WorkloadConstruct, ESubnet, ERegistryType } from "./workload-construct";
 
@@ -39,6 +41,7 @@ new WorkloadConstruct(stack, "ConstructWorkload1", {
 ```
 
 ### Example 2
+
 ```
 import { WorkloadConstruct, ESubnet, ERegistryType } from "./workload-construct";
 
@@ -73,6 +76,7 @@ new WorkloadConstruct(stack, "ConstructWorkload2", {
 ```
 
 ### Example 3
+
 ```
 import { WorkloadConstruct, ESubnet, ERegistryType } from "./workload-construct";
 
@@ -112,31 +116,39 @@ new WorkloadConstruct(stack, "ConstructWorkload3", {
 To deploy the AWS CDK stack and run the WorkloadConstruct, follow these steps:
 
 Make sure you have the AWS CDK installed. If not, install it using the following command:
+
 ```
 npm install -g aws-cdk
 ```
 
 Install project dependencies by running the following command:
+
 ```
 npm install
 ```
+
 Deploy the CDK stack by running:
+
 ```
 cdk deploy
 ```
+
 Bootstrap the CDK stack:
+
 ```
 cdk bootstrap
 ```
 
 Running test
+
 ```
 npm test
 ```
+
 The AWS CDK will deploy the stack based on the configurations provided in the examples.
 
-
 # Configuration Options
+
 The WorkloadConstruct accepts the following configuration options:
 
 - **vpc**: Specifies the VPC configuration for the workload.

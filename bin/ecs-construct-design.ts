@@ -10,35 +10,38 @@ import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import { DeploymentControllerType } from "aws-cdk-lib/aws-ecs";
 
 const app = new cdk.App();
-const stack = new cdk.Stack(app, "MyECSStack");
+const stack = new cdk.Stack(app, "MyStack", {
+  env: {
+    region: "af-south-1",
+  },
+});
 
-new WorkloadConstruct(stack, "ConstructWorkload6", {
+new WorkloadConstruct(stack, "workloadConstruct", {
   vpc: {
-    name: "ConstructVPC6",
+    name: "constructVpc",
     subnet: ESubnet.Public,
   },
   logger: {
     retentionDays: RetentionDays.ONE_MONTH,
   },
   registry: {
-    image: "nginx",
+    image: "tomiwatech/parser:amd64",
     type: ERegistryType.Public,
   },
   container: {
-    name: "ConstructContainer6",
-    port: 80,
+    name: "constructContainer",
+    port: 6000,
   },
   fargateService: {
-    serviceName: "ConstructService6",
+    serviceName: "constructFargateService",
     desiredCount: 1,
     assignPublicIp: true,
   },
   cluster: {
-    name: "ECS-Cluster6",
+    name: "workloadCluster",
   },
   exposeApi: true,
   rolloutStrategy: DeploymentControllerType.ECS,
 });
-
 
 app.synth();

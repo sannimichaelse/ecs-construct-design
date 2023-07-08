@@ -21,6 +21,8 @@ import { Dashboard, GraphWidget } from "aws-cdk-lib/aws-cloudwatch";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import { NamespaceType } from "aws-cdk-lib/aws-servicediscovery";
 import { ApplicationLoadBalancedFargateService } from "aws-cdk-lib/aws-ecs-patterns";
+import * as integrations from "@aws-cdk/aws-apigatewayv2-integrations-alpha";
+import * as apigwv2 from "@aws-cdk/aws-apigatewayv2-alpha";
 
 export enum ESubnet {
   Public = "public",
@@ -83,13 +85,14 @@ export class WorkloadConstruct extends Construct {
     super(scope, id);
 
     const cluster = this.createCluster(props);
-    const securityGroup = this.createSecurityGroup(cluster);
+    const securityGroup = this.createSecurityGroup(cluster, props);
     if (props.exposeApi) {
       const service = this.createLoadBalancedService(
         props,
         cluster,
         securityGroup
       );
+      this.createApiGateway(service);
       this.createCloudWatchDashboard(service);
     } else {
       const taskDefinition = this.createTaskDefinition("ECSDesignTask");
@@ -189,12 +192,15 @@ export class WorkloadConstruct extends Construct {
     return ContainerImage.fromRegistry(props.registry.image);
   }
 
-  private createSecurityGroup(cluster: ICluster) {
+  private createSecurityGroup(cluster: ICluster, props: WorkloadProps) {
     const securityGroup = new SecurityGroup(this, "ServiceSecurityGroup", {
       vpc: cluster.vpc,
       allowAllOutbound: true,
     });
-    securityGroup.addIngressRule(Peer.ipv4("0.0.0.0/0"), Port.tcp(80));
+    securityGroup.addIngressRule(
+      Peer.ipv4("0.0.0.0/0"),
+      Port.tcp(props.container.port)
+    );
     return securityGroup;
   }
 
@@ -250,6 +256,28 @@ export class WorkloadConstruct extends Construct {
             type: props.rolloutStrategy,
           }
         : undefined,
+    });
+  }
+
+  private createApiGateway(
+    service: ApplicationLoadBalancedFargateService
+  ): void {
+    const httpApi = new apigwv2.HttpApi(this, "ecs-api-gateway", {
+      apiName: "ecs-api-gateway",
+    });
+
+    const albIntegration = new integrations.HttpAlbIntegration(
+      "ecs-alb-integration",
+      service.listener,
+      {
+        method: apigwv2.HttpMethod.ANY,
+      }
+    );
+
+    new apigwv2.HttpRoute(this, "ApiGatewayRoute", {
+      httpApi,
+      routeKey: apigwv2.HttpRouteKey.with("/{proxy+}", apigwv2.HttpMethod.ANY),
+      integration: albIntegration,
     });
   }
 
