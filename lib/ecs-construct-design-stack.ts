@@ -117,18 +117,20 @@ export class WorkloadConstruct extends Construct {
   }
 
   private createVPC(props: WorkloadProps): Vpc {
-    const { subnet, name } = props.vpc;
-    const subnetType =
-      subnet === ESubnet.Private
-        ? SubnetType.PRIVATE_WITH_EGRESS
-        : SubnetType.PUBLIC;
+    const { name } = props.vpc;
 
     return new Vpc(this, "MyVpc", {
       vpcName: name,
       subnetConfiguration: [
         {
-          subnetType: subnetType,
-          name: "Subnet",
+          cidrMask: 24,
+          subnetType: SubnetType.PUBLIC,
+          name: "Public Subnet",
+        },
+        {
+          cidrMask: 24,
+          subnetType: SubnetType.PRIVATE_WITH_EGRESS,
+          name: "Private Subnet",
         },
       ],
     });
@@ -166,13 +168,8 @@ export class WorkloadConstruct extends Construct {
     return container;
   }
 
-  private getSecret(
-    secretName: string,
-    secretArn: string
-  ): secretsmanager.ISecret {
-    return secretsmanager.Secret.fromSecretAttributes(this, secretName, {
-      secretCompleteArn: secretArn,
-    });
+  private getSecret(secretName: string): secretsmanager.ISecret {
+    return secretsmanager.Secret.fromSecretNameV2(this, "Secret", secretName);
   }
 
   private getImageFromRegistry(props: WorkloadProps): ContainerImage {
@@ -180,10 +177,7 @@ export class WorkloadConstruct extends Construct {
       props.registry.type === ERegistryType.Private &&
       props.registry.secret
     ) {
-      const registrySecret = this.getSecret(
-        props.registry.secretName!,
-        props.registry.secretArn!
-      );
+      const registrySecret = this.getSecret(props.registry.secretName!);
       return ContainerImage.fromRegistry(props.registry.image, {
         credentials: registrySecret,
       });
@@ -210,6 +204,7 @@ export class WorkloadConstruct extends Construct {
     securityGroup: SecurityGroup
   ): ApplicationLoadBalancedFargateService {
     const { desiredCount, assignPublicIp } = props.fargateService;
+    const applicationName = this.getSecret("dburl");
     const service = new ApplicationLoadBalancedFargateService(this, "Service", {
       cluster,
       desiredCount,
@@ -230,6 +225,9 @@ export class WorkloadConstruct extends Construct {
         logDriver: new AwsLogDriver({
           streamPrefix: `ECSLog`,
         }),
+        environment: {
+          APPLICATION_NAME: applicationName.secretValue.unsafeUnwrap(),
+        },
       },
     });
 
@@ -266,18 +264,18 @@ export class WorkloadConstruct extends Construct {
       apiName: "ecs-api-gateway",
     });
 
-    const albIntegration = new integrations.HttpAlbIntegration(
-      "ecs-alb-integration",
-      service.listener,
-      {
-        method: apigwv2.HttpMethod.ANY,
-      }
-    );
+    const integrationUrl = `http://${service.loadBalancer.loadBalancerDnsName}`;
 
-    new apigwv2.HttpRoute(this, "ApiGatewayRoute", {
-      httpApi,
-      routeKey: apigwv2.HttpRouteKey.with("/{proxy+}", apigwv2.HttpMethod.ANY),
-      integration: albIntegration,
+    httpApi.addRoutes({
+      path: "/",
+      methods: [apigwv2.HttpMethod.ANY],
+      integration: new integrations.HttpUrlIntegration(
+        "ecs-alb-integration",
+        integrationUrl,
+        {
+          method: apigwv2.HttpMethod.ANY,
+        }
+      ),
     });
   }
 

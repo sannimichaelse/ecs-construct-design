@@ -12,7 +12,7 @@ import { DeploymentControllerType } from "aws-cdk-lib/aws-ecs";
 const app = new cdk.App();
 const stack = new cdk.Stack(app, "MyStack", {
   env: {
-    region: "af-south-1",
+    region: "us-east-1",
   },
 });
 
