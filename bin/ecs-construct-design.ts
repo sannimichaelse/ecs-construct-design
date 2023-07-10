@@ -5,6 +5,7 @@ import {
   ERegistryType,
   ESubnet,
   WorkloadConstruct,
+  EClusterType,
 } from "../lib/ecs-construct-design-stack";
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import { DeploymentControllerType } from "aws-cdk-lib/aws-ecs";
@@ -39,6 +40,7 @@ new WorkloadConstruct(stack, "workloadConstruct", {
   },
   cluster: {
     name: "workloadCluster",
+    type: EClusterType.Fargate,
   },
   exposeApi: true,
   rolloutStrategy: DeploymentControllerType.ECS,
